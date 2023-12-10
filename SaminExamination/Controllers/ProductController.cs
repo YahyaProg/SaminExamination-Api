@@ -5,6 +5,7 @@ using SaminExamination.Context;
 using SaminExamination.Dto;
 using SaminExamination.Interfaces;
 using SaminExamination.Models;
+using System.Threading;
 
 namespace SaminExamination.Controllers
 {
@@ -29,19 +30,24 @@ namespace SaminExamination.Controllers
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [Authorize(Roles ="Admin")]
-        public IActionResult CrateProduct([FromQuery] int categoryId, [FromBody] ProductDto getProduct)
+        public async Task<IActionResult> CrateProduct([FromQuery] int categoryId, [FromBody] ProductDto getProduct , CancellationToken cancellationToken)
         {
             if (getProduct == null)
             {
                 return BadRequest(" .لطفا پارامتر های ورودی را به درستی پر نمایید");
             }
+            if (!ModelState.IsValid)
+            {
+                return BadRequest("فرمت ورودی نا معتبر است");
+            }
             if (categoryId == null)
                 return BadRequest("لطفا شAutoMapper.AutoMapperMappingException: 'Missing type map configuration or unsupported mapping.'ناسه گروه کالا را وارد نمایید");
-            var category = _categoryRepository.GetCategory(categoryId);
+            var category =await _categoryRepository.GetCategory(categoryId);
             if (category == null)
                 return NotFound("گروه کالایی با این شناس یافت نشد");
-            var product = _productRepository.GetProducts().Where(p => p.Name.Trim().ToUpper() == getProduct.Name.TrimEnd().ToUpper()).FirstOrDefault();
-            if (product != null)
+            var product = await _productRepository.GetProducts(cancellationToken);
+            var fileterProduct = product.Where(p => p.Name.Trim().ToUpper() == getProduct.Name.TrimEnd().ToUpper()).FirstOrDefault();
+            if (fileterProduct != null)
             {
                 ModelState.AddModelError("", "این کالا از قبل موجود میباشد");
                  return StatusCode(422, ModelState);
@@ -49,9 +55,9 @@ namespace SaminExamination.Controllers
                 
             var productMap = _mapper.Map<Product>(getProduct);
 
-            productMap.Category=_categoryRepository.GetCategory(categoryId);
+            productMap.Category= await _categoryRepository.GetCategory(categoryId);
 
-            if(!_productRepository.AddProducts(productMap))
+            if(!await _productRepository.AddProducts(productMap , cancellationToken))
             {
                 ModelState.AddModelError("", "سرور با مشکل مواجه شده است");
                 return StatusCode(500, ModelState);
@@ -65,9 +71,10 @@ namespace SaminExamination.Controllers
         [HttpGet("getProducts")]
         [ProducesResponseType(200)]
         [Authorize(Roles ="Admin,User")]
-        public IActionResult GetProducts()
+        public async Task<IActionResult> GetProducts(GetProductDto product,CancellationToken cancellationToken)
         {
-            var Products = _mapper.Map<ICollection<ProductDto>>(_productRepository.GetProducts());
+            var Products = _mapper.Map<ICollection<ProductDto>>(_productRepository.GetProducts(product,cancellationToken));
+
             if (Products == null)
                 return NotFound("کالایی یافت نشد");
 
@@ -79,19 +86,19 @@ namespace SaminExamination.Controllers
         [HttpGet("getProduct/{productId}")]
         [ProducesResponseType(200)]
         [Authorize(Roles = "Admin,User")]
-        public IActionResult GetProductById(int productId)
+        public async Task<IActionResult>GetProductById(int productId , CancellationToken cancellationToken)
         {
-            if (!_productRepository.ProductIsExist(productId))
+            if (!await _productRepository.ProductIsExist(productId))
                 return NotFound("کالایی با این شناسه یافت نشد");
-            var Product = _mapper.Map<ProductDto>(_productRepository.GetProductById(productId));
+            var Product = _mapper.Map<ProductDto>(await _productRepository.GetProductById(productId, cancellationToken));
             return Ok(Product);
         }
         [HttpDelete("admin/DeleteProduct/{productId}")]
         [ProducesResponseType(200)]
         [Authorize(Roles = "Admin")]
-        public IActionResult deleteProduct(int productId)
+        public async Task<IActionResult> deleteProduct(int productId , CancellationToken cancellationToken)
         {
-            if (!_productRepository.ProductIsExist(productId))
+            if (!await _productRepository.ProductIsExist(productId))
                 return NotFound("محصولی با این شناسه یافت نشد");
             if (!ModelState.IsValid)
             {
@@ -99,8 +106,8 @@ namespace SaminExamination.Controllers
             }
               
 
-            var productToDelete = _productRepository.GetProductById(productId);
-            if (! _productRepository.DeleteProducts(productToDelete))
+            var productToDelete =await _productRepository.GetProductById(productId , cancellationToken);
+            if (!await _productRepository.DeleteProducts(productToDelete, cancellationToken))
             {
                 return BadRequest("خطایی از سمت سرویس رخ داده است لطفا مجدد تلاش کنید");
 
@@ -114,11 +121,11 @@ namespace SaminExamination.Controllers
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         [Authorize(Roles = "Admin")]
-        public IActionResult updateProducts(int productId , [FromBody] ProductUpdateDto updateProducrt)
+        public async Task<IActionResult> updateProducts(int productId , [FromBody] ProductUpdateDto updateProducrt , CancellationToken cancellationToken)
         {
             if (updateProducrt == null)
                 return BadRequest("پارامتر ورودی نا معتبر میباشد");
-            if (!_productRepository.ProductIsExist(productId))
+            if (!await _productRepository.ProductIsExist(productId))
                 return BadRequest("محصولی با این شناسه یافت نشد");
             if (!ModelState.IsValid)
             {
@@ -128,10 +135,10 @@ namespace SaminExamination.Controllers
             {
                 return BadRequest("ایدی تطابق  ندارد");
             }
-            var myCategory = _productRepository.GetCategoryByProductId(productId);
+            var myCategory =await _productRepository.GetCategoryByProductId(productId, cancellationToken);
             var ProductMap = _mapper.Map<Product>(updateProducrt);
             ProductMap.Category = myCategory;
-            if (!_productRepository.UpdateProducts(ProductMap))
+            if (!await _productRepository.UpdateProducts(ProductMap , cancellationToken))
             {
                 ModelState.AddModelError("", "مشکلی ازسمت سرویس رخ داده است لطفا مجدد تلاش نمایید");
                 return StatusCode(500, ModelState);
@@ -143,13 +150,13 @@ namespace SaminExamination.Controllers
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         [Authorize(Roles = "Admin,User")]
-        public IActionResult GetCategoryByProductId(int productId)
+        public async Task<IActionResult> GetCategoryByProductId(int productId, CancellationToken cancellationToken)
         {
-            if (!_productRepository.ProductIsExist(productId))
+            if (!await _productRepository.ProductIsExist(productId))
                 return NotFound("محصولی با این شناسه یافت نشد");
             if (!ModelState.IsValid)
                 return BadRequest("فرمت ورودی نا معتبر میباشد");
-            var Category = _mapper.Map<CategoryDto>(_productRepository.GetCategoryByProductId(productId));
+            var Category = _mapper.Map<CategoryDto>(await _productRepository.GetCategoryByProductId(productId, cancellationToken));
             return Ok(Category);
         }
 
@@ -158,13 +165,13 @@ namespace SaminExamination.Controllers
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         [Authorize(Roles = "Admin,User")]
-        public IActionResult GetProductsListByCategoryId(int categoryId)
+        public async Task<IActionResult> GetProductsListByCategoryId(int categoryId , CancellationToken cancellationToken)
         {
-            if (! _categoryRepository.CategoryExist(categoryId))
+            if (!await _categoryRepository.CategoryExist(categoryId))
                 return NotFound("گروه کلایی با این شناسه یافت نشد");
             if (!ModelState.IsValid)
                 return BadRequest("فرمت ورودی نا معتبر میباشد");
-            var products = _mapper.Map<ICollection<ProductDto>>(_productRepository.GetProductsListByCategoryId(categoryId));
+            var products = _mapper.Map<ICollection<ProductDto>>( await _productRepository.GetProductsListByCategoryId(categoryId, cancellationToken));
             return Ok(products);
         }
 

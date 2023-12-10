@@ -28,13 +28,13 @@ namespace SaminExamination.Controllers
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [Authorize(Roles = "Admin")]
-        public IActionResult AddedBuyInvoices([FromQuery] int productId, [FromBody] BuyInvoiceDto buyInvoice)
+        public async Task<IActionResult>  AddedBuyInvoices([FromQuery] int productId, [FromBody] BuyInvoiceDto buyInvoice , CancellationToken cancellationToken)
         {
-            if (!_productRepository.ProductIsExist(productId))
+            if (!await _productRepository.ProductIsExist(productId))
                 return NotFound("کالایی با این شناسه یافت نشد");
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            _buyInvoicesRepository.BuyInvoices(productId, buyInvoice);
+           await _buyInvoicesRepository.BuyInvoices(productId, buyInvoice , cancellationToken);
             return Ok("عملیات با موفقیت انجام شد" +
                 "");
         }
@@ -42,21 +42,21 @@ namespace SaminExamination.Controllers
         [HttpPost("GetAllBuyInvoices")]
         [ProducesResponseType(200)]
         [Authorize(Roles = "Admin")]
-        public IActionResult GetAllBuyInvoices()
+        public  async Task<IActionResult>  GetAllBuyInvoices( CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-            return Ok(_buyInvoicesRepository.GetBuyInvoices());
+            return Ok(await _buyInvoicesRepository.GetBuyInvoices(cancellationToken));
         }
         [HttpGet("GetBuyInvoice/{invoiceId}")]
         [ProducesResponseType(200, Type = typeof(BuyInvoice))]
         [ProducesResponseType(400)]
         [Authorize(Roles = "Admin")]
-        public IActionResult GetBuyInvoice(int invoiceId)
+        public async Task<IActionResult>  GetBuyInvoice(int invoiceId , CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid) { return BadRequest(ModelState); }
-            if (!_buyInvoicesRepository.IsExist(invoiceId))
+            if (!await _buyInvoicesRepository.IsExist(invoiceId))
                 return BadRequest("فاکتور خریدی با این شناسه یافت نشد");
-            return Ok(_buyInvoicesRepository.GetBuyInvoicesById(invoiceId));
+            return Ok(await _buyInvoicesRepository.GetBuyInvoicesById(invoiceId , cancellationToken));
         }
     }
 }

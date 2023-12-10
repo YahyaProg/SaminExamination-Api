@@ -24,12 +24,12 @@ namespace SaminExamination.Controllers
         [HttpPost("admin/AddCategory")]
         [ProducesResponseType(204)]
         [Authorize(Roles = "Admin")]
-        public IActionResult CreateCategory([FromBody] CategoryDto categoryCraeted)
+        public async Task<IActionResult>CreateCategory([FromBody] CategoryDto categoryCraeted , CancellationToken cancellationToken)
          {
             if (categoryCraeted == null)
                 return BadRequest("لطفا پارامتر های ورودی را پر نمایید!");
-            var category = _categoryRepository.GetCategories()
-               .Where(c => c.CategoryName.Trim().ToUpper() == categoryCraeted.CategoryName.TrimEnd().ToUpper())
+            var category = await _categoryRepository.GetCategories(cancellationToken);
+              var filterCategory= category.Where(c => c.CategoryName.Trim().ToUpper() == categoryCraeted.CategoryName.TrimEnd().ToUpper())
                .FirstOrDefault();
             if (category != null)
             {
@@ -44,7 +44,7 @@ namespace SaminExamination.Controllers
                 CategoryName = categoryCraeted.CategoryName
             };
 
-            if (!_categoryRepository.CreateCategory(categoryMap))
+            if (! await _categoryRepository.CreateCategory(categoryMap,cancellationToken))
             {
                 ModelState.AddModelError("", "مشکلی در سرویس پیش امده است");
                 return StatusCode(500, ModelState);
@@ -57,13 +57,13 @@ namespace SaminExamination.Controllers
         [ProducesResponseType(200)]
         [Authorize(Roles = "Admin,User")]
       
-        public IActionResult GetCategories()
+        public async Task<IActionResult> GetCategories(CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-            var Categories = _mapper.Map<ICollection<CategoryDto>>(_categoryRepository.GetCategories());
+            var Categories = _mapper.Map<ICollection<CategoryDto>>(_categoryRepository.GetCategories(cancellationToken));
             return Ok(Categories);
         }
         [HttpGet("admin/DeleteCategory/{categoryId}")]
@@ -71,25 +71,25 @@ namespace SaminExamination.Controllers
         [Authorize(Roles = "Admin")]
 
         [Authorize(Roles = "Admin")]
-        public IActionResult DeleteCategory(int categoryId)
+        public async Task<IActionResult>  DeleteCategory(int categoryId)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest("فرمت ورودی نا معتبر میباشد");
             }
-            if (!_categoryRepository.IsExist(categoryId))
+            if (! await _categoryRepository.IsExist(categoryId))
                 return NotFound("گروه کالا با این شناسه یافت نشد");
 
-            var category = _categoryRepository.GetCategory(categoryId);
-            _categoryRepository.DeleteCategory(category);
+            var category = await _categoryRepository.GetCategory(categoryId);
+          await _categoryRepository.DeleteCategory(category);
             return Ok("عملیات با موفقیت انجام شد");
         }
         [HttpGet("GetCategoryById/{categoryId}")]
         [ProducesResponseType(200)]
         [Authorize(Roles = "Admin,User")]
-        public IActionResult GetCategoryById(int categoryId)
+        public async Task<IActionResult>  GetCategoryById(int categoryId)
         {
-            if (!_categoryRepository.CategoryExist(categoryId))
+            if (! await _categoryRepository.CategoryExist(categoryId))
                 return NotFound("گروه کالایی با این شناسه یافت نشد");
             if(!ModelState.IsValid)
                 return BadRequest("فرمت  ورودی  معتبر نمیباشد");
@@ -101,14 +101,15 @@ namespace SaminExamination.Controllers
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         [Authorize(Roles = "Admin")]
-        public IActionResult UpdateCategory (int CategoryId, [FromBody] CategoryUpdateDto updateProducrt)
+        public async Task<IActionResult> UpdateCategory (int CategoryId, [FromBody] CategoryUpdateDto updateProducrt , CancellationToken 
+            cancellationToken)
         {
-            if (!_categoryRepository.IsExist(CategoryId))
+            if (! await  _categoryRepository.IsExist(CategoryId))
                 return NotFound("گروه کالایی با این شناسه یافت نشد");
             if (!ModelState.IsValid)
                 return BadRequest("فرمت  ورودی  معتبر نمیباشد");
             var categoryUpdated = _mapper.Map<Category>(updateProducrt);
-            _categoryRepository.UpdateCategory(categoryUpdated);
+           await _categoryRepository.UpdateCategory(categoryUpdated , cancellationToken);
             return Ok("عملیات با موفقیت انجام شد");
         }
 

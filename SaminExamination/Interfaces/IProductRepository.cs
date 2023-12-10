@@ -5,19 +5,19 @@ namespace SaminExamination.Interfaces
 {
     public interface IProductRepository
     {
-        bool AddProducts(Product products);
-        bool UpdateProducts(Product products);
+        Task<bool> AddProducts(Product products , CancellationToken cancellationToken);
+        Task<bool> UpdateProducts(Product products , CancellationToken cancellationToken);
 
-        bool DeleteProducts(Product products);
+        Task<bool> DeleteProducts(Product products, CancellationToken cancellationToken);
 
-        ICollection<Product> GetProducts();
+        Task<ICollection<Product>> GetProducts(GetProductDto product,CancellationToken cancellationToken);
 
-        Category GetCategoryByProductId(int id);
-        Product GetProductById(int id);
+        Task<Category>GetCategoryByProductId(int id , CancellationToken cancellationToken);
+        Task<Product> GetProductById(int id , CancellationToken cancellationToken);
 
-        bool Save();
-        bool ProductIsExist(int id);
+        Task<bool> SaveAsync();
+       Task<bool> ProductIsExist(int id);
 
-        ICollection<Product> GetProductsListByCategoryId(int categoryId);
+      Task<ICollection<Product>> GetProductsListByCategoryId(int categoryId, CancellationToken cancellationToken);
     }
 }

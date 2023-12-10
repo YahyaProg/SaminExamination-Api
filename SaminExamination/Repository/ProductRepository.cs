@@ -1,5 +1,7 @@
-﻿using SaminExamination.Context;
+﻿using Microsoft.EntityFrameworkCore;
+using SaminExamination.Context;
 using SaminExamination.Dto;
+using SaminExamination.Helper;
 using SaminExamination.Interfaces;
 using SaminExamination.Models;
 
@@ -12,50 +14,51 @@ namespace SaminExamination.Repository
         {
             _context = context;
         }
-        public bool AddProducts(Product products)
+        public async Task<bool>  AddProducts(Product products, CancellationToken cancellationToken)
         {
-           _context.Add(products);
-            return Save();
+          await _context.AddAsync(products , cancellationToken);
+            return await SaveAsync();
         }
 
-        public bool DeleteProducts(Product product)
+        public async Task<bool> DeleteProducts(Product product , CancellationToken cancellationToken)
         {
-            _context.Remove(product);
-            return Save();
+          _context.Remove(product);
+            return await  SaveAsync();
         }
 
-        public Product GetProductById(int id)
+        public async Task<Product> GetProductById(int id , CancellationToken cancellationToken)
         {
-            return _context.products.Where(p => p.Id == id).FirstOrDefault();
+            return await _context.products.Where(p => p.Id == id).FirstOrDefaultAsync(cancellationToken);
         }
 
-        public ICollection<Product> GetProducts()
+        public async Task<ICollection<Product>> GetProducts(GetProductDto product ,CancellationToken cancellationToken)
         {
-            return _context.products.ToList();
+           var products = await _context.products.ToListAsync();
+            return products.ToPaged(product.PageNumber , product.PageSiz).ToList();
         }
 
-        public bool ProductIsExist(int id)
+        public async Task<bool> ProductIsExist(int id)
         {
-           return  _context.products.Any(p => p.Id == id);
+           return await _context.products.AnyAsync(p => p.Id == id);
          
         }
 
-        public bool UpdateProducts(Product products)
+        public async Task<bool> UpdateProducts(Product products, CancellationToken cancellationToken)
         {
             _context.Update(products);
-            return Save();
+            return await SaveAsync();
         }
-        public Category GetCategoryByProductId(int Id)
+        public async Task<Category> GetCategoryByProductId(int Id, CancellationToken cancellationToken)
         {
-            return _context.products.Where(p => p.Id == Id).Select(c => c.Category).FirstOrDefault();
+            return await _context.products.Where(p => p.Id == Id).Select(c => c.Category).FirstOrDefaultAsync(cancellationToken);
         }
-        public ICollection<Product> GetProductsListByCategoryId(int categoryId)
+        public async Task<ICollection<Product>> GetProductsListByCategoryId(int categoryId, CancellationToken cancellationToken)
         {
-            return _context.products.Where(p => p.CategoryId == categoryId).ToList();
+            return await _context.products.Where(p => p.CategoryId == categoryId).ToListAsync(cancellationToken);
         }
-        public bool Save()
+        public async Task<bool> SaveAsync()
         {
-            var save = _context.SaveChanges();
+            var save =await _context.SaveChangesAsync();
             return save > 0? true : false;
         }
     }

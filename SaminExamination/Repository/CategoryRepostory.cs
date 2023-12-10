@@ -1,6 +1,8 @@
-﻿using SaminExamination.Context;
+﻿using Microsoft.EntityFrameworkCore;
+using SaminExamination.Context;
 using SaminExamination.Interfaces;
 using SaminExamination.Models;
+using System.Threading;
 
 namespace SaminExamination.Repository
 {
@@ -11,47 +13,47 @@ namespace SaminExamination.Repository
         {
             _context = context;
         }
-        public bool CategoryExist(int ctegoryId)
+        public async Task<bool> CategoryExist(int ctegoryId)
         {
-            return _context.categories.Any(c => c.Id == ctegoryId);
+            return await  _context.categories.AnyAsync(c => c.Id == ctegoryId );
         }
 
-        public bool CreateCategory(Category category)
+        public async Task<bool> CreateCategory(Category category , CancellationToken cancellationToken)
         {
-            _context.categories.Add(category);
-            return Save();
+           await _context.categories.AddAsync(category , cancellationToken);
+            return await SaveAsync();
         }
 
-        public bool DeleteCategory(Category category)
+        public async Task <bool> DeleteCategory(Category category)
         {
             _context.Remove(category);
-            return Save();
+            return await SaveAsync();
         }
 
-        public ICollection<Category> GetCategories()
+        public async Task<ICollection<Category>> GetCategories(CancellationToken cancellationToken)
         {
-           return _context.categories.ToList();
+           return await _context.categories.ToListAsync(cancellationToken);
         }
 
-        public Category GetCategory(int id)
+        public async Task<Category> GetCategory(int id)
         {
-            return _context.categories.Where(c => c.Id == id).FirstOrDefault();
+            return await _context.categories.Where(c => c.Id == id).FirstOrDefaultAsync();
         }
 
-        public bool Save()
+        public async Task<bool> SaveAsync()
         {
-            var saved = _context.SaveChanges();
+            var saved = await _context.SaveChangesAsync();
             return saved > 0 ? true : false;
         }
 
-        public bool UpdateCategory(Category category)
+        public async Task<bool>  UpdateCategory(Category category ,CancellationToken cancellation)
         {
             _context.Update(category);
-            return Save();
+            return await SaveAsync();
         }
-        public bool IsExist(int categoryId)
+        public Task<bool>  IsExist(int categoryId)
         {
-            return _context.categories.Any(c => categoryId == categoryId);
+            return _context.categories.AnyAsync(c => categoryId == categoryId);
         }
     }
 }

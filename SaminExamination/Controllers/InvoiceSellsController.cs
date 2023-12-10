@@ -25,32 +25,32 @@ namespace SaminExamination.Controllers
         [HttpGet("GetAllInvoiceSells")]
         [ProducesResponseType(200)]
         [Authorize(Roles ="Admin")]
-        public IActionResult GetAllInvoiceSells()
+        public async Task<IActionResult> GetAllInvoiceSells(CancellationToken cancellation)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            return Ok(_invoiceSellRepository.GetSellInvoices());
+            return Ok(await _invoiceSellRepository.GetSellInvoices(cancellation));
         }
         [HttpGet("GetAllInvoiceSellById/{invoiceId}")]
         [ProducesResponseType(200)]
         [Authorize(Roles = "Admin")]
-        public IActionResult GetInvoiceSellById(int invoiceId) {
-            if(!_invoiceSellRepository.IsExist(invoiceId))
+        public async Task<IActionResult>  GetInvoiceSellById(int invoiceId , CancellationToken cancellationToken) {
+            if(!await _invoiceSellRepository.IsExist(invoiceId))
                 return BadRequest("فاکتوری با این شناسه یافت نشد");
-        var invoice= _invoiceSellRepository.GetSellInvoceById(invoiceId);
+        var invoice=await _invoiceSellRepository.GetSellInvoceById(invoiceId , cancellationToken);
             return Ok(invoice);
         }
         [HttpPost("AddedInvoicesSells")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [Authorize(Roles = "Admin")]
-        public IActionResult AddSellsInvoice([FromQuery] int productId, [FromBody] InvoiceSellDto invoiceSell)
+        public async Task<IActionResult>  AddSellsInvoice([FromQuery] int productId, [FromBody] InvoiceSellDto invoiceSell , CancellationToken cancellationToken)
         {
-            if (!_invoiceSellRepository.EnoughProduct(productId, invoiceSell))
+            if (!await _invoiceSellRepository.EnoughProduct(productId, invoiceSell))
                 return BadRequest("میزان سفارش شما بیشتر از موجودی انبار میباشد");
             if(!ModelState.IsValid)
                 return BadRequest(ModelState);
-            _invoiceSellRepository.NewSellInvoices(productId, invoiceSell);
+           await _invoiceSellRepository.NewSellInvoices(productId, invoiceSell , cancellationToken);
             return Ok("عملیات با موفقیت انجام شد");
         }
     }

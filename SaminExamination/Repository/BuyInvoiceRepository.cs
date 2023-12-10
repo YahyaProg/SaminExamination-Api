@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using SaminExamination.Context;
 using SaminExamination.Dto;
 using SaminExamination.Interfaces;
@@ -18,50 +19,50 @@ namespace SaminExamination.Repository
             _mapper = mapper;
         }
 
-        public bool BuyInvoices( int productId, BuyInvoiceDto buyInvoice)
+        public async Task<bool>  BuyInvoices( int productId, BuyInvoiceDto buyInvoice , CancellationToken cancellationToken)
         {
             var mybuyInvoice = _mapper.Map<BuyInvoice>(buyInvoice);
             mybuyInvoice.TotalPrice = mybuyInvoice.Count * mybuyInvoice.Price;
-            _contect.BuyInvoices.Add(mybuyInvoice);
+            await _contect.BuyInvoices.AddAsync(mybuyInvoice);
             
-            var product = _contect.products.Where(c => c.Id == productId).FirstOrDefault();
+            var product =await _contect.products.Where(c => c.Id == productId).FirstOrDefaultAsync();
       
             
             if (mybuyInvoice.updatePrice == true) {
-                product.Price = mybuyInvoice.Price;
+                product!.Price = mybuyInvoice.Price;
                 product.count += mybuyInvoice.Count;
-                return Save();
+                return await AsyncSave();
             }
             else
             {
-                product.count += mybuyInvoice.Count;
-                return Save();
+                product!.count += mybuyInvoice.Count;
+                return await AsyncSave();
             }
 
      
         }
 
-        public BuyInvoice GetBuyInvoices(int invoiceId)
+        public async Task<BuyInvoice>  GetBuyInvoices(int invoiceId, CancellationToken cancellationToken)
         {
-            var BuyInvoice = _contect.BuyInvoices.Where(b => b.Id == invoiceId).FirstOrDefault();
+            var BuyInvoice =await _contect.BuyInvoices.Where(b => b.Id == invoiceId).FirstOrDefaultAsync(cancellationToken);
             return BuyInvoice;
         }
 
-        public ICollection<BuyInvoice> GetBuyInvoices()
+        public async Task<ICollection<BuyInvoice>>  GetBuyInvoices(CancellationToken cancellationToken)
         {
-            return _contect.BuyInvoices.ToList();
+            return await _contect.BuyInvoices.ToListAsync(cancellationToken);
         }
-       public BuyInvoice GetBuyInvoicesById(int id)
+       public async Task<BuyInvoice> GetBuyInvoicesById(int id , CancellationToken cancellationToken)
         {
-            return _contect.BuyInvoices.Where(b => b.Id == id).FirstOrDefault();
+            return await _contect.BuyInvoices.Where(b => b.Id == id).FirstOrDefaultAsync(cancellationToken);
         }
-        public bool IsExist(int invoiceId)
+        public async Task<bool> IsExist(int invoiceId)
         {
-            return _contect.BuyInvoices.Any(b => b.Id == invoiceId);
+            return await _contect.BuyInvoices.AnyAsync(b => b.Id == invoiceId);
         }
-        public bool Save()
+        public async Task<bool> AsyncSave()
         {
-            var save = _contect.SaveChanges();
+            var save =await _contect.SaveChangesAsync();
          return   save > 0 ? true : false;
         }
     }

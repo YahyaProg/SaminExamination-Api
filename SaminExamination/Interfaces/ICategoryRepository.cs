@@ -4,13 +4,13 @@ namespace SaminExamination.Interfaces
 {
     public interface ICategoryRepository
     {
-        ICollection<Category> GetCategories();
-        Category GetCategory(int id);
-        bool CreateCategory(Category category);
-        bool UpdateCategory(Category category);
-        bool DeleteCategory(Category category);
-        bool Save();
-        bool CategoryExist(int ctegoryId);
-        bool IsExist(int categoryId);
+        Task<ICollection<Category>> GetCategories(CancellationToken cancellationToken);
+       Task<Category> GetCategory(int id);
+        Task<bool> CreateCategory(Category category , CancellationToken cancellation);
+        Task<bool> UpdateCategory(Category category , CancellationToken cancellation);
+       Task<bool>  DeleteCategory(Category category);
+        Task<bool> SaveAsync();
+         Task<bool> CategoryExist(int ctegoryId);
+        Task<bool> IsExist(int categoryId);
     }
 }

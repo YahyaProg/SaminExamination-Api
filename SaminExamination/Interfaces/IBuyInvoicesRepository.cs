@@ -5,11 +5,11 @@ namespace SaminExamination.Interfaces
 {
     public interface IBuyInvoicesRepository
     {
-      bool BuyInvoices( int productId, BuyInvoiceDto buyInvoice);
-       BuyInvoice GetBuyInvoices(int invoiceId);
-        ICollection<BuyInvoice> GetBuyInvoices();
-        BuyInvoice GetBuyInvoicesById(int id);
-        bool IsExist(int id);
-        bool Save();
+     Task<bool> BuyInvoices( int productId, BuyInvoiceDto buyInvoice , CancellationToken cancellationToken);
+      Task<BuyInvoice> GetBuyInvoices(int invoiceId , CancellationToken cancellationToken);
+       Task<ICollection<BuyInvoice>> GetBuyInvoices(CancellationToken cancellationToken);
+       Task<BuyInvoice> GetBuyInvoicesById(int id , CancellationToken cancellationToken);
+      Task<bool> IsExist(int id );
+       Task<bool> AsyncSave();
     }
 }
